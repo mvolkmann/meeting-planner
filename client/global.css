@@ -1,0 +1,54 @@
+body {
+  --primary-color: cornflowerblue;
+  background-color: var(--primary-color);
+  font-family: sans-serif;
+}
+
+button {
+  border: none;
+  border-radius: 0.5rem;
+  color: var(--primary-color);
+  font-size: 1.5rem;
+  font-weight: bold;
+  padding: 0.5rem;
+}
+
+form {
+  background-color: white;
+  border-radius: 0.5rem;
+}
+
+h1 {
+  color: white;
+}
+
+input {
+  border: solid var(--primary-color) 1px;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+}
+
+input:disabled {
+  border-color: transparent;
+}
+
+label {
+  color: var(--primary-color);
+  font-size: 1.2rem;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+td,
+th {
+  border: solid var(--primary-color) 1px;
+  padding: 0 0.5rem;
+}
+
+th {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 0.5rem;
+}
