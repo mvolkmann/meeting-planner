@@ -2,7 +2,7 @@
   import {createEventDispatcher} from 'svelte';
 
   export let meeting;
-  export let selected;
+  export let selected = false;
 
   const dispatch = createEventDispatcher();
 
@@ -13,11 +13,20 @@
       dispatch('delete', meeting);
     }
   }
+
+  function formatTime() {
+    let [hours, minutes] = time.split(':');
+    hours = parseInt(hours);
+    const afterNoon = hours > 12;
+    if (afterNoon) hours -= 12;
+    const amPm = afterNoon ? 'PM' : 'AM';
+    return `${hours}:${minutes} ${amPm}`;
+  }
 </script>
 
 <li class:selected on:click>
   <span class="name">{name}</span>
-  on {date} at {time}
+  {#if date}on {date} at {formatTime(time)}{/if}
   <button on:click|stopPropagation={deleteMeeting}>&#x1f5d1;</button>
 </li>
 

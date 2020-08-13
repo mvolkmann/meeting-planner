@@ -1,21 +1,23 @@
 <script>
+  //import {Mongo} from 'meteor/mongo';
   import {createEventDispatcher} from 'svelte';
+  import {Meetings} from '../imports/meetings';
 
   export let meeting;
 
   const dispatch = createEventDispatcher();
 
-  let editingTopic;
+  let editTopicIndex = -1;
   let endMsForTopic;
   let meetingStatus = 'not started';
   let paused = false;
   let remainingMsInTopic = 0;
   let topicIndex;
+
   let topics = [];
+  $: ({topics} = meeting);
 
-  $: if (meeting) topics = meeting.topics;
-
-  $: haveTopics = meeting.topics.length;
+  $: haveTopics = Boolean(topics.length);
 
   $: totalMinutes = topics.reduce((acc, topic) => acc + topic.minutes, 0);
 
@@ -43,22 +45,26 @@
   function addTopic() {
     const minutes = Math.max(meeting.duration - totalMinutes, 0);
     const topic = {description: '', presenter: '', minutes};
-    topics.push(topic);
-    meeting.topics = topics;
-    editTopic(topic);
+    Meetings.update(meeting._id, {
+      $set: {topics: [...topics, topic]}
+    });
+    topics.push(topic); //TODO: need?
+    editTopic(topics.length - 1);
   }
 
   const close = () => dispatch('close');
 
   function deleteTopic(topic) {
-    meeting.topics = topics.filter(t => t !== topic);
+    topics = topics.filter(t => t !== topic);
+    Meetings.update(meeting._id, {$set: {topics}});
+    stopEditing();
   }
 
-  function editTopic(topic) {
-    if (editingTopic === topic) {
+  function editTopic(index) {
+    if (index === editTopicIndex) {
       stopEditing();
     } else {
-      editingTopic = topic;
+      editTopicIndex = index;
     }
   }
 
@@ -69,8 +75,7 @@
   }
 
   function handleSubmit() {
-    console.log('MeetingEditor.svelte handleSubmit: entered');
-    //stopEditing();
+    // Do nothing.
   }
 
   function moveTopicDown(topic) {
@@ -136,12 +141,28 @@
   }
 
   function stopEditing() {
-    editingTopic = undefined;
+    editTopicIndex = -1;
   }
 
   function swapTopics(index1, index2) {
+    stopEditing();
     [topics[index1], topics[index2]] = [topics[index2], topics[index1]];
-    meeting.topics = topics;
+    // $set updates only specified properties.
+    Meetings.update({_id: meeting._id}, {$set: {topics}});
+  }
+
+  function updateProperty(event, property) {
+    const {value} = event.target;
+    // $set updates only specified properties.
+    Meetings.update({_id: meeting._id}, {$set: {[property]: value}});
+    meeting[property] = value;
+  }
+
+  function updateTopic(event, index, property) {
+    const {value} = event.target;
+    topics[index][property] = value;
+    // $set updates only specified properties.
+    Meetings.update({_id: meeting._id}, {$set: {topics}});
   }
 
   function updateTopicColor() {
@@ -164,7 +185,8 @@
         autofocus
         disabled={meetingStarted}
         size="30"
-        bind:value={meeting.name} />
+        value={meeting.name}
+        on:input={e => updateProperty(e, 'name')} />
     </div>
     <div>
       <label for="date">Date</label>
@@ -172,7 +194,8 @@
         id="date"
         disabled={meetingStarted}
         type="date"
-        bind:value={meeting.date} />
+        value={meeting.date}
+        on:input={e => updateProperty(e, 'date')} />
     </div>
     <div>
       <label for="time">Time</label>
@@ -180,7 +203,8 @@
         id="time"
         disabled={meetingStarted}
         type="time"
-        bind:value={meeting.time} />
+        value={meeting.time}
+        on:input={e => updateProperty(e, 'time')} />
     </div>
     <div>
       <label for="time">Duration</label>
@@ -188,7 +212,8 @@
         id="duration"
         disabled={meetingStarted}
         type="number"
-        bind:value={meeting.duration} />
+        value={meeting.duration}
+        on:input={e => updateProperty(e, 'duration')} />
     </div>
   </div>
   <div class="right-side">
@@ -209,17 +234,25 @@
           </tr>
         </thead>
         <tbody>
-          {#each meeting.topics as topic, index}
+          {#each topics as topic, index}
             <tr class={'topic' + index}>
-              {#if topic === editingTopic}
+              {#if index === editTopicIndex}
                 <td>
-                  <input autofocus bind:value={topic.description} />
+                  <input
+                    autofocus
+                    value={topic.description}
+                    on:input={e => updateTopic(e, index, 'description')} />
                 </td>
                 <td>
-                  <input bind:value={topic.presenter} />
+                  <input
+                    value={topic.presenter}
+                    on:input={e => updateTopic(e, index, 'presenter')} />
                 </td>
                 <td>
-                  <input type="number" bind:value={topic.minutes} />
+                  <input
+                    type="number"
+                    value={topic.minutes}
+                    on:input={e => updateTopic(e, index, 'minutes')} />
                 </td>
               {:else}
                 <td>{topic.description}</td>
@@ -228,10 +261,10 @@
               {/if}
               {#if !meetingStarted}
                 <td class="edit">
-                  <button on:click={() => editTopic(topic)}>&#x270E;</button>
+                  <button on:click={() => editTopic(index)}>&#x270E;</button>
                   <button on:click={() => deleteTopic(topic)}>&#x1f5d1;</button>
                   <button
-                    class:hide={index === meeting.topics.length - 1}
+                    class:hide={index === topics.length - 1}
                     on:click={() => moveTopicDown(topic)}>
                     &#9660;
                   </button>
