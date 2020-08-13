@@ -9,7 +9,8 @@
   let selectedMeetingIndex = -1;
 
   const query = {};
-  const projection = {sort: {name: 1}}; // ascending alphabetical
+  //const projection = {sort: {name: 1}}; // ascending alphabetical
+  const projection = {}; // sorting breaks selectedMeetingIndex!
   // This is a MongoDB cursor which is also a Svelte store.
   $: meetings = Meetings.find(query, projection);
   $: selectedMeeting = $meetings[selectedMeetingIndex];
@@ -23,6 +24,7 @@
       topics: []
     };
     selectedMeetingIndex = $meetings.length;
+    //selectedMeetingIndex = 0; // will be first in list
     selectedMeeting._id = Meetings.insert(selectedMeeting);
   }
 

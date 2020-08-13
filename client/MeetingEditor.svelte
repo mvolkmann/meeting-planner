@@ -158,9 +158,9 @@
     meeting[property] = value;
   }
 
-  function updateTopic(event, index, property) {
+  function updateTopic(event, index, property, isNumber) {
     const {value} = event.target;
-    topics[index][property] = value;
+    topics[index][property] = isNumber ? Number(value) : value;
     // $set updates only specified properties.
     Meetings.update({_id: meeting._id}, {$set: {topics}});
   }
@@ -252,7 +252,7 @@
                   <input
                     type="number"
                     value={topic.minutes}
-                    on:input={e => updateTopic(e, index, 'minutes')} />
+                    on:input={e => updateTopic(e, index, 'minutes', true)} />
                 </td>
               {:else}
                 <td>{topic.description}</td>
