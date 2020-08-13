@@ -53,8 +53,7 @@
     Meetings.update(meeting._id, {
       $set: {topics: [...topics, topic]}
     });
-    topics.push(topic); //TODO: need?
-    editTopic(topics.length - 1);
+    editTopic(topics.length);
   }
 
   const close = () => dispatch('close');
