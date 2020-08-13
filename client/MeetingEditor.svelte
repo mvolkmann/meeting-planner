@@ -9,11 +9,16 @@
 
   let editTopicIndex = -1;
   let endMsForTopic;
-  let paused = false;
   let remainingMsInTopic = 0;
-  let topicIndex;
+  let topicIndex = -1;
 
   $: ({status: meetingStatus} = meeting);
+  $: paused = meetingStatus === 'paused';
+  $: if (meetingStatus === 'resumed') {
+    endMsForTopic = Date.now() + remainingMsInTopic;
+  }
+
+  $: if (meetingStatus === 'started' && topicIndex === -1) startMeeting();
 
   $: ({topics} = meeting);
 
@@ -34,13 +39,13 @@
       : '';
 
   $: buttonText =
-    topicIndex === undefined
+    topicIndex === -1
       ? 'Start Meeting'
       : paused
       ? 'Resume Meeting'
       : 'Pause Meeting';
 
-  $: meetingStarted = topicIndex !== undefined;
+  $: meetingStarted = topicIndex > -1;
 
   function addTopic() {
     const minutes = Math.max(meeting.duration - totalMinutes, 0);
@@ -68,8 +73,8 @@
     }
   }
 
-  function formatTime(remainingMsInTopic) {
-    const seconds = Math.round(remainingMsInTopic / 1000);
+  function formatTime(ms) {
+    const seconds = Math.round(ms / 1000);
     const minutes = Math.floor(seconds / 60);
     return minutes + ':' + (seconds % 60).toString().padStart(2, '0');
   }
@@ -91,7 +96,7 @@
   function nextTopic() {
     const topic = topics[topicIndex];
     if (!topic) {
-      topicIndex = undefined;
+      topicIndex = -1;
       meetingStatus = 'ended';
       return;
     }
@@ -127,19 +132,26 @@
     if (tr) tr.style.backgroundColor = color;
   }
 
+  function startMeeting() {
+    stopEditing();
+    meetingStatus = 'started';
+    Meetings.update(meeting._id, {$set: {status: meetingStatus}});
+
+    topicIndex = 0;
+    nextTopic();
+  }
+
   function startOrPauseMeeting() {
     if (meetingStarted) {
-      if (paused) endMsForTopic = Date.now() + remainingMsInTopic;
-      paused = !paused;
-      meetingStatus = paused ? 'paused' : 'resumed';
+      if (paused) {
+        // Prepare to resume.
+        endMsForTopic = Date.now() + remainingMsInTopic;
+      }
+      meetingStatus = paused ? 'resumed' : 'paused';
+      Meetings.update(meeting._id, {$set: {status: meetingStatus}});
     } else {
-      stopEditing();
-      meetingStatus = 'started';
-      topicIndex = 0;
-      nextTopic();
+      startMeeting();
     }
-
-    Meetings.update(meeting._id, {$set: {status: meetingStatus}});
   }
 
   function stopEditing() {
