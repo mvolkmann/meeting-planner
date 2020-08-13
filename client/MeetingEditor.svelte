@@ -9,12 +9,12 @@
 
   let editTopicIndex = -1;
   let endMsForTopic;
-  let meetingStatus = 'not started';
   let paused = false;
   let remainingMsInTopic = 0;
   let topicIndex;
 
-  let topics = [];
+  $: ({status: meetingStatus} = meeting);
+
   $: ({topics} = meeting);
 
   $: haveTopics = Boolean(topics.length);
@@ -131,13 +131,15 @@
     if (meetingStarted) {
       if (paused) endMsForTopic = Date.now() + remainingMsInTopic;
       paused = !paused;
-      meetingStatus = paused ? 'been paused' : 'resumed';
+      meetingStatus = paused ? 'paused' : 'resumed';
     } else {
       stopEditing();
       meetingStatus = 'started';
       topicIndex = 0;
       nextTopic();
     }
+
+    Meetings.update(meeting._id, {$set: {status: meetingStatus}});
   }
 
   function stopEditing() {

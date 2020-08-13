@@ -21,6 +21,7 @@
       date: getDefaultDate(),
       time: getDefaultTime(),
       duration: 30,
+      status: 'not started',
       topics: []
     };
     selectedMeetingIndex = $meetings.length;
@@ -59,23 +60,25 @@
 
 <div class="container">
   <header>
-    <h1>Meetings</h1>
+    <h1>Meeting Planner</h1>
   </header>
   <section>
     {#if selectedMeeting}
       <MeetingEditor meeting={selectedMeeting} on:close={editorClosed} />
     {:else}
       <button on:click={createMeeting}>New Meeting</button>
-      <div class="title">Select a meeting.</div>
-      <ul>
-        {#each $meetings as meeting, index}
-          <Meeting
-            {meeting}
-            on:click={() => selectMeeting(index, meeting)}
-            on:delete={deleteMeeting}
-            selected={index === selectedMeetingIndex} />
-        {/each}
-      </ul>
+      {#if $meetings.length}
+        <div class="title">Select a meeting.</div>
+        <ul>
+          {#each $meetings as meeting, index}
+            <Meeting
+              {meeting}
+              on:click={() => selectMeeting(index, meeting)}
+              on:delete={deleteMeeting}
+              selected={index === selectedMeetingIndex} />
+          {/each}
+        </ul>
+      {/if}
     {/if}
   </section>
 </div>
