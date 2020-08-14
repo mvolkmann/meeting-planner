@@ -4,6 +4,21 @@ import {Mongo} from 'meteor/mongo';
 
 export const Meetings = new Mongo.Collection('meetings');
 
+if (Meteor.isServer) {
+  console.log('meetings.js x: publishing meetings');
+  // This is only run on the server.
+  // An arrow function cannot be used here
+  // if we need to use the "this" keyword.
+  // If no query is provided, the entire collection is published.
+  // A second argument can be passed to the find method which is
+  // an object where the keys are names of properties.
+  // The values are booleans that either specify which properties
+  // to include (true) or which to exclude (false), but not both.
+  Meteor.publish('meetings', function () {
+    return Meetings.find();
+  });
+}
+
 export function getDefaultDate() {
   const now = new Date();
   const month = (now.getMonth() + 1).toString().padStart(2, '0');

@@ -1,4 +1,5 @@
 <script>
+  import {onMount} from 'svelte';
   import Meeting from './Meeting.svelte';
   import MeetingEditor from './MeetingEditor.svelte';
   import {Meetings} from '../imports/meetings.js';
@@ -6,6 +7,8 @@
 
   let selectedMeeting = null;
   let selectedMeetingIndex = -1;
+
+  onMount(() => Meteor.subscribe('meetings'));
 
   const query = {};
   //const projection = {sort: {name: 1}}; // ascending alphabetical
@@ -51,7 +54,6 @@
     {#if selectedMeeting}
       <MeetingEditor meeting={selectedMeeting} on:close={editorClosed} />
     {:else}
-      <div>selectedMeeting = {selectedMeeting}</div>
       <button on:click={createMeeting}>New Meeting</button>
       {#if $meetings.length}
         <div class="title">Select a meeting.</div>
