@@ -21,3 +21,7 @@ shell-server@0.5.0            # Server-side component of the `meteor shell` comm
 svelte:compiler
 rdb:svelte-meteor-data
 static-html
+accounts-ui
+accounts-password
+svelte:blaze-integration
+email

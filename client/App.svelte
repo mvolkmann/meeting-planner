@@ -1,4 +1,7 @@
 <script>
+  import {Meteor} from 'meteor/meteor';
+  import {BlazeTemplate} from 'meteor/svelte:blaze-integration';
+  import {useTracker} from 'meteor/rdb:svelte-meteor-data';
   import {onMount} from 'svelte';
   import Meeting from './Meeting.svelte';
   import MeetingEditor from './MeetingEditor.svelte';
@@ -9,6 +12,9 @@
   let selectedMeetingIndex = -1;
 
   onMount(() => Meteor.subscribe('meetings'));
+
+  // user is a store
+  $: user = useTracker(() => Meteor.user());
 
   const query = {};
   //const projection = {sort: {name: 1}}; // ascending alphabetical
@@ -47,11 +53,14 @@
 </script>
 
 <div class="container">
+  <BlazeTemplate template="loginButtons" />
   <header>
     <h1>Meeting Planner</h1>
   </header>
   <section>
-    {#if selectedMeeting}
+    {#if !$user}
+      <p>Please sign in.</p>
+    {:else if selectedMeeting}
       <MeetingEditor meeting={selectedMeeting} on:close={editorClosed} />
     {:else}
       <button on:click={createMeeting}>New Meeting</button>
@@ -76,6 +85,10 @@
     margin-top: 1rem;
   }
 
+  p {
+    color: white;
+  }
+
   .title {
     color: white;
     font-size: 1.2rem;
@@ -86,5 +99,28 @@
     background-color: white;
     list-style-type: none;
     padding: 0.5rem;
+  }
+
+  :global(#login-buttons) {
+    position: fixed;
+    top: 0.5rem;
+    right: 0.5rem;
+
+    padding: 0.5rem;
+    text-align: right;
+  }
+
+  :global(#login-buttons #login-name-link),
+  :global(#login-buttons #login-sign-in-link) {
+    color: white;
+    font-size: 1.5rem;
+    text-decoration: none;
+  }
+
+  :global(#login-dropdown-list) {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
   }
 </style>
