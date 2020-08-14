@@ -107,7 +107,7 @@
     }
 
     const {minutes} = topic;
-    if (!minutes || typeof minutes !== 'number') {
+    if (minutes === undefined || typeof minutes !== 'number') {
       alert('Each topic must have a minutes property that is a number.');
       return;
     }
