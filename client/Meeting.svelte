@@ -17,8 +17,9 @@
   function formatTime() {
     let [hours, minutes] = time.split(':');
     hours = parseInt(hours);
-    const afterNoon = hours > 12;
-    if (afterNoon) hours -= 12;
+    const afterNoon = hours >= 12;
+    if (afterNoon && hours > 12) hours -= 12;
+    if (hours === 0) hours = 12; // midnight
     const amPm = afterNoon ? 'PM' : 'AM';
     return `${hours}:${minutes} ${amPm}`;
   }
