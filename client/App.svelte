@@ -15,6 +15,7 @@
 
   // user is a store
   $: user = useTracker(() => Meteor.user());
+  $: emailVerified = $user && $user.emails[0].verified;
 
   const query = {};
   //const projection = {sort: {name: 1}}; // ascending alphabetical
@@ -60,6 +61,11 @@
   <section>
     {#if !$user}
       <p>Please sign in.</p>
+    {:else if !emailVerified}
+      <p>
+        You have been sent an email containing a link to verify your account.
+        Please click that link in order to begin using this app.
+      </p>
     {:else if selectedMeeting}
       <MeetingEditor meeting={selectedMeeting} on:close={editorClosed} />
     {:else}
