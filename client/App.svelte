@@ -4,7 +4,7 @@
   import {useTracker} from 'meteor/rdb:svelte-meteor-data';
   import {onMount} from 'svelte';
   import Meeting from './Meeting.svelte';
-  import MeetingEditor from './MeetingEditor.svelte';
+  import MeetingDetail from './MeetingDetail.svelte';
   import {Meetings} from '../imports/meetings.js';
   import {call, handleError} from './util.js';
 
@@ -67,7 +67,7 @@
         Please click that link in order to begin using this app.
       </p>
     {:else if selectedMeeting}
-      <MeetingEditor meeting={selectedMeeting} on:close={editorClosed} />
+      <MeetingDetail meeting={selectedMeeting} on:close={editorClosed} />
     {:else}
       <button on:click={createMeeting}>New Meeting</button>
       {#if $meetings.length}
