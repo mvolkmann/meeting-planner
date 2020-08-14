@@ -5,7 +5,6 @@ import {Mongo} from 'meteor/mongo';
 export const Meetings = new Mongo.Collection('meetings');
 
 if (Meteor.isServer) {
-  console.log('meetings.js x: publishing meetings');
   // This is only run on the server.
   // An arrow function cannot be used here
   // if we need to use the "this" keyword.
