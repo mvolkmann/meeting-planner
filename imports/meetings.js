@@ -1,4 +1,4 @@
-import {check} from 'meteor/check';
+import {check, Match} from 'meteor/check';
 import {Meteor} from 'meteor/meteor';
 import {Mongo} from 'meteor/mongo';
 
@@ -51,15 +51,16 @@ Meteor.methods({
   },
 
   deleteMeeting(meetingId) {
-    //TODO: meetingId is an ObjectID instead of a string when a meeting
-    //TODO: is inserted directly into MongoDB using the "meteor mongo" shell.
-    //TODO: That cause the following check to fail.
-    check(meetingId, String);
+    // meetingId is an ObjectID instead of a string when a meeting is
+    // inserted directly into MongoDB using the "meteor mongo" shell.
+    check(meetingId, Match.OneOf(String, Meteor.Collection.ObjectID));
     Meetings.remove(meetingId);
   },
 
   updateMeeting(meetingId, updates) {
-    check(meetingId, String);
+    // meetingId is an ObjectID instead of a string when a meeting is
+    // inserted directly into MongoDB using the "meteor mongo" shell.
+    check(meetingId, Match.OneOf(String, Meteor.Collection.ObjectID));
     check(updates, Object);
     // $set updates only specified properties.
     Meetings.update(meetingId, {$set: updates});
