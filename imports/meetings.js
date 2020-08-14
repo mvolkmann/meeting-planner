@@ -51,6 +51,9 @@ Meteor.methods({
   },
 
   deleteMeeting(meetingId) {
+    //TODO: meetingId is an ObjectID instead of a string when a meeting
+    //TODO: is inserted directly into MongoDB using the "meteor mongo" shell.
+    //TODO: That cause the following check to fail.
     check(meetingId, String);
     Meetings.remove(meetingId);
   },
