@@ -29,7 +29,9 @@ input {
 }
 
 input:disabled {
+  background-color: transparent;
   border-color: transparent;
+  color: black;
 }
 
 label {

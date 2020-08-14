@@ -1,9 +1,8 @@
 <script>
-  // import {useTracker} from 'meteor/rdb:svelte-meteor-data';
   import Meeting from './Meeting.svelte';
   import MeetingEditor from './MeetingEditor.svelte';
-
   import {Meetings} from '../imports/meetings.js';
+  import {call, handleError} from './util.js';
 
   let selectedMeeting = null;
   let selectedMeetingIndex = -1;
@@ -15,41 +14,27 @@
   $: meetings = Meetings.find(query, projection);
   $: selectedMeeting = $meetings[selectedMeetingIndex];
 
-  function createMeeting() {
-    selectedMeeting = {
-      name: '',
-      date: getDefaultDate(),
-      time: getDefaultTime(),
-      duration: 30,
-      status: 'not started',
-      topics: []
-    };
-    selectedMeetingIndex = $meetings.length;
-    //selectedMeetingIndex = 0; // will be first in list
-    selectedMeeting._id = Meetings.insert(selectedMeeting);
+  async function createMeeting() {
+    try {
+      const nextIndex = $meetings.length;
+      selectedMeeting = await call('createMeeting');
+      selectedMeetingIndex = nextIndex;
+    } catch (e) {
+      handleError(e);
+    }
   }
 
-  function deleteMeeting(event) {
-    const meeting = event.detail;
-    Meetings.remove(meeting._id);
+  function deleteMeeting(meetingId) {
+    try {
+      call('deleteMeeting', meetingId);
+    } catch (e) {
+      handleError(e);
+    }
   }
 
   function editorClosed() {
     selectedMeeting = null;
     selectedMeetingIndex = -1;
-  }
-
-  function getDefaultDate() {
-    const now = new Date();
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const date = now.getDate().toString().padStart(2, '0');
-    return now.getFullYear() + '-' + month + '-' + date;
-  }
-
-  function getDefaultTime() {
-    const now = new Date();
-    const hours = (now.getHours() + 1).toString().padStart(2, '0');
-    return hours + ':00';
   }
 
   function selectMeeting(index, meeting) {
@@ -66,6 +51,7 @@
     {#if selectedMeeting}
       <MeetingEditor meeting={selectedMeeting} on:close={editorClosed} />
     {:else}
+      <div>selectedMeeting = {selectedMeeting}</div>
       <button on:click={createMeeting}>New Meeting</button>
       {#if $meetings.length}
         <div class="title">Select a meeting.</div>
@@ -74,7 +60,7 @@
             <Meeting
               {meeting}
               on:click={() => selectMeeting(index, meeting)}
-              on:delete={deleteMeeting}
+              on:delete={() => deleteMeeting(meeting._id)}
               selected={index === selectedMeetingIndex} />
           {/each}
         </ul>

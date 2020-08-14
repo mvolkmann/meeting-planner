@@ -1,7 +1,6 @@
 <script>
-  //import {Mongo} from 'meteor/mongo';
   import {createEventDispatcher} from 'svelte';
-  import {Meetings} from '../imports/meetings';
+  import {call, handleError} from './util.js';
 
   export let meeting;
 
@@ -47,21 +46,28 @@
 
   $: meetingStarted = topicIndex > -1;
 
-  function addTopic() {
+  async function addTopic() {
     const minutes = Math.max(meeting.duration - totalMinutes, 0);
     const topic = {description: '', presenter: '', minutes};
-    Meetings.update(meeting._id, {
-      $set: {topics: [...topics, topic]}
-    });
-    editTopic(topics.length);
+    try {
+      const nextIndex = topics.length;
+      await updateMeeting({topics: [...topics, topic]});
+      editTopic(nextIndex);
+    } catch (e) {
+      handleError(e);
+    }
   }
 
   const close = () => dispatch('close');
 
-  function deleteTopic(topic) {
+  async function deleteTopic(topic) {
     topics = topics.filter(t => t !== topic);
-    Meetings.update(meeting._id, {$set: {topics}});
-    stopEditing();
+    try {
+      await updateMeeting({topics});
+      stopEditing();
+    } catch (e) {
+      handleError(e);
+    }
   }
 
   function editTopic(index) {
@@ -131,13 +137,17 @@
     if (tr) tr.style.backgroundColor = color;
   }
 
-  function startMeeting() {
+  async function startMeeting() {
     stopEditing();
     meetingStatus = 'started';
-    Meetings.update(meeting._id, {$set: {status: meetingStatus}});
 
-    topicIndex = 0;
-    nextTopic();
+    try {
+      await updateMeeting({status: meetingStatus});
+      topicIndex = 0;
+      nextTopic();
+    } catch (e) {
+      handleError(e);
+    }
   }
 
   function startOrPauseMeeting() {
@@ -146,8 +156,14 @@
         // Prepare to resume.
         endMsForTopic = Date.now() + remainingMsInTopic;
       }
+
       meetingStatus = paused ? 'resumed' : 'paused';
-      Meetings.update(meeting._id, {$set: {status: meetingStatus}});
+
+      try {
+        updateMeeting({status: meetingStatus});
+      } catch (e) {
+        handleError(e);
+      }
     } else {
       startMeeting();
     }
@@ -159,23 +175,38 @@
 
   function swapTopics(index1, index2) {
     stopEditing();
+
     [topics[index1], topics[index2]] = [topics[index2], topics[index1]];
-    // $set updates only specified properties.
-    Meetings.update({_id: meeting._id}, {$set: {topics}});
+
+    try {
+      updateMeeting({topics});
+    } catch (e) {
+      handleError(e);
+    }
   }
 
-  function updateProperty(event, property) {
+  const updateMeeting = updates => call('updateMeeting', meeting._id, updates);
+
+  async function updateProperty(event, property) {
     const {value} = event.target;
-    // $set updates only specified properties.
-    Meetings.update({_id: meeting._id}, {$set: {[property]: value}});
-    meeting[property] = value;
+
+    try {
+      await updateMeeting({[property]: value});
+      meeting[property] = value;
+    } catch (e) {
+      handleError(e);
+    }
   }
 
   function updateTopic(event, index, property, isNumber) {
     const {value} = event.target;
     topics[index][property] = isNumber ? Number(value) : value;
-    // $set updates only specified properties.
-    Meetings.update({_id: meeting._id}, {$set: {topics}});
+
+    try {
+      updateMeeting({topics});
+    } catch (e) {
+      handleError(e);
+    }
   }
 
   function updateTopicColor() {

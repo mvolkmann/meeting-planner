@@ -10,7 +10,7 @@
 
   function deleteMeeting() {
     if (confirm('Are you sure you want to delete this meeting?')) {
-      dispatch('delete', meeting);
+      dispatch('delete');
     }
   }
 
