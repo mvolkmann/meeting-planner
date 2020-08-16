@@ -1,8 +1,22 @@
 import {check, Match} from 'meteor/check';
 import {Meteor} from 'meteor/meteor';
 import {Mongo} from 'meteor/mongo';
+import SimpleSchema from 'simpl-schema';
 
 export const Meetings = new Mongo.Collection('meetings');
+const topicSchema = new SimpleSchema({
+  description: {type: String, defaultValue: ''},
+  presenter: {type: String, defaultValue: ''},
+  minutes: {type: Number, defaultValue: 0}
+});
+Meetings.schema = new SimpleSchema({
+  name: {type: String, defaultValue: ''},
+  date: String,
+  time: String,
+  duration: SimpleSchema.Integer,
+  topics: [topicSchema]
+});
+Meetings.attachSchema(Meetings.schema);
 
 if (Meteor.isServer) {
   // This is only run on the server.

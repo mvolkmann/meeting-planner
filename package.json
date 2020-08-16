@@ -19,6 +19,7 @@
     "meteor-node-stubs": "^1.0.0",
     "prettier": "^2.0.5",
     "prettier-plugin-svelte": "^1.1.0",
+    "simpl-schema": "^1.9.0",
     "svelte": "^3.24.1"
   },
   "meteor": {
