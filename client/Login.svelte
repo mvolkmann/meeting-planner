@@ -1,5 +1,6 @@
 <script>
   import {BlazeTemplate} from 'meteor/svelte:blaze-integration';
+  import './accounts-config.js';
 </script>
 
 <BlazeTemplate template="loginButtons" />
