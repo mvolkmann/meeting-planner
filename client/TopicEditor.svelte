@@ -290,7 +290,6 @@
 </script>
 
 {#if haveTopics}
-  <div>topicIndex = {topicIndex}</div>
   <table>
     <caption>The meeting has {status}.</caption>
     <thead>
