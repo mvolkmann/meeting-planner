@@ -12,8 +12,12 @@ const topicSchema = new SimpleSchema({
 Meetings.schema = new SimpleSchema({
   name: {type: String, defaultValue: ''},
   date: String,
+  remainingMeetingMs: {type: Number, optional: true}, // set by pause
+  remainingTopicMs: {type: Number, optional: true}, // set by pause
+  startMs: {type: Number, optional: true}, // set by start and resume
+  status: String,
   time: String,
-  duration: SimpleSchema.Integer,
+  duration: SimpleSchema.Integer, // in minutes
   topics: [topicSchema]
 });
 Meetings.attachSchema(Meetings.schema);
@@ -76,6 +80,7 @@ Meteor.methods({
     // inserted directly into MongoDB using the "meteor mongo" shell.
     check(meetingId, Match.OneOf(String, Meteor.Collection.ObjectID));
     check(updates, Object);
+
     // $set updates only specified properties.
     Meetings.update(meetingId, {$set: updates});
   }

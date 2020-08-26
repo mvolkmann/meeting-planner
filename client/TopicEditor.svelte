@@ -1,47 +1,28 @@
 <script>
-  import {call, handleError} from './util.js';
+  import {call, handleError, isActive} from './util.js';
 
   export let meeting;
-  export let topicIndex;
 
+  const MS_PER_SECOND = 1000;
+  const SECONDS_PER_MINUTE = 60;
+
+  let buttonText = '';
   let editTopicIndex = -1;
-  let endMsForTopic;
-  let remainingMsInTopic = 0;
+  let topicEndMs = 0;
+  let errorMessage = '';
+  let haveTopics = false;
+  let intervalId;
+  let meetingStarted = false;
+  let remainingMeetingMs = 0; // ms left in entire meeting
+  let remainingTopicMs = 0; // ms left in current topic
+  let remainingTopicsMinutes = 0; // minutes left in future topics
+  let startMs = 0; // timestamp meeting started or last resumed
+  let status = '';
+  let topics = [];
+  let totalMinutes = 0;
+  let topicIndex = -1;
 
-  $: ({status: meetingStatus} = meeting);
-  $: paused = meetingStatus === 'paused';
-  $: if (meetingStatus === 'resumed') {
-    endMsForTopic = Date.now() + remainingMsInTopic;
-  }
-
-  $: if (meetingStatus === 'started' && topicIndex === -1) startMeeting();
-
-  $: ({topics} = meeting);
-
-  $: haveTopics = Boolean(topics.length);
-
-  $: totalMinutes = topics.reduce((acc, topic) => acc + topic.minutes, 0);
-
-  $: minutesInRemainingTopics = topics
-    .slice(topicIndex + 1)
-    .reduce((acc, topic) => acc + topic.minutes, 0);
-
-  $: remainingMsInMeeting =
-    remainingMsInTopic + 60 * 1000 * minutesInRemainingTopics;
-
-  $: errorMessage =
-    totalMinutes > meeting.duration
-      ? 'Topic minutes exceed meeting duration!'
-      : '';
-
-  $: buttonText =
-    topicIndex === -1
-      ? 'Start Meeting'
-      : paused
-      ? 'Resume Meeting'
-      : 'Pause Meeting';
-
-  $: meetingStarted = topicIndex > -1;
+  $: setup(meeting);
 
   async function addTopic() {
     const minutes = Math.max(meeting.duration - totalMinutes, 0);
@@ -73,11 +54,34 @@
     }
   }
 
-  function formatTime(ms) {
-    const seconds = Math.round(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    return minutes + ':' + (seconds % 60).toString().padStart(2, '0');
+  function endMeeting() {
+    clearInterval(intervalId);
+    intervalId = 0;
+
+    resetColors();
+
+    status = 'ended';
+    topicIndex = -1;
+    updateMeeting({
+      remainingMeetingMs: 0,
+      remainingTopicMs: 0,
+      startMs: 0,
+      status
+    });
   }
+
+  function formatTime(ms) {
+    const seconds = Math.round(ms / MS_PER_SECOND);
+    const minutes = Math.floor(seconds / SECONDS_PER_MINUTE);
+    return (
+      minutes + ':' + (seconds % SECONDS_PER_MINUTE).toString().padStart(2, '0')
+    );
+  }
+
+  const getRemainingTopicsMinutes = topicIndex =>
+    topics.slice(topicIndex + 1).reduce((acc, topic) => acc + topic.minutes, 0);
+
+  const minutesToMs = minutes => minutes * SECONDS_PER_MINUTE * MS_PER_SECOND;
 
   function moveTopicDown(topic) {
     const index = topics.findIndex(t => t === topic);
@@ -89,38 +93,56 @@
     if (index > 0) swapTopics(index - 1, index);
   }
 
-  function nextTopic() {
+  function nextTopic(inProgressMs) {
+    if (inProgressMs) setRemainingTopicMs(inProgressMs);
+
     const topic = topics[topicIndex];
     if (!topic) {
-      topicIndex = -1;
-      meetingStatus = 'ended';
+      // no more topics in meeting
+      endMeeting();
       return;
     }
 
-    const {minutes} = topic;
-    if (minutes === undefined || typeof minutes !== 'number') {
-      alert('Each topic must have a minutes property that is a number.');
-      return;
-    }
+    remainingTopicsMinutes = getRemainingTopicsMinutes(topicIndex);
 
-    remainingMsInTopic = minutes * 60 * 1000;
-    endMsForTopic = Date.now() + remainingMsInTopic;
+    if (!remainingTopicMs) {
+      const {minutes} = topic;
+      if (minutes === undefined || typeof minutes !== 'number') {
+        alert('Each topic must have a minutes property that is a number.');
+        return;
+      }
+
+      setRemainingTopicMs(minutesToMs(minutes));
+    }
+    topicEndMs = Date.now() + remainingTopicMs;
+
     updateTopicColor(topicIndex);
 
-    const token = setInterval(() => {
-      if (paused) return;
+    intervalId = setInterval(() => {
+      if (status === 'paused') return;
 
       const nowMs = Date.now();
-      if (nowMs >= endMsForTopic) {
+      if (nowMs >= topicEndMs) {
         setTopicColor(topicIndex, 'lightgray');
-        clearInterval(token);
+        clearInterval(intervalId);
+        intervalId = 0;
         topicIndex++;
+        remainingTopicMs = 0; // need to calculate for next topic
         nextTopic();
       } else {
-        remainingMsInTopic = endMsForTopic - nowMs;
+        setRemainingTopicMs(topicEndMs - nowMs);
         updateTopicColor(topicIndex);
       }
-    }, 1000);
+    }, MS_PER_SECOND);
+  }
+
+  function resetColors() {
+    topics.forEach((_, index) => setTopicColor(index, 'white'));
+  }
+
+  function setRemainingTopicMs(ms) {
+    remainingTopicMs = ms;
+    remainingMeetingMs = remainingTopicMs + minutesToMs(remainingTopicsMinutes);
   }
 
   function setTopicColor(index, color) {
@@ -128,35 +150,73 @@
     if (tr) tr.style.backgroundColor = color;
   }
 
-  async function startMeeting() {
-    stopEditing();
-    meetingStatus = 'started';
+  function setup(meeting) {
+    ({remainingMeetingMs, remainingTopicMs, startMs, status, topics} = meeting);
 
-    try {
-      await updateMeeting({status: meetingStatus});
+    haveTopics = Boolean(topics.length);
+    meetingStarted = isActive(meeting);
+    totalMinutes = topics.reduce((acc, topic) => acc + topic.minutes, 0);
+    errorMessage =
+      totalMinutes > meeting.duration
+        ? 'Topic minutes exceed meeting duration!'
+        : '';
+
+    // If the meeting has started, determine which topic we are on.
+    if (meetingStarted) {
+      // Determine how much time remains in the meeting
+      // and how long the meeting has run so far.
+      const totalMs = minutesToMs(totalMinutes);
+      if (!remainingMeetingMs) {
+        remainingMeetingMs = totalMs - (Date.now() - startMs);
+      }
+      let elapsedMs = totalMs - remainingMeetingMs;
+
+      // Determine which topic the meeting has reached.
       topicIndex = 0;
-      nextTopic();
-    } catch (e) {
-      handleError(e);
+      while (true) {
+        const topic = topics[topicIndex];
+        const topicMs = minutesToMs(topic.minutes);
+        if (topicMs > elapsedMs) break;
+        elapsedMs -= topicMs;
+        topicIndex++;
+      }
+    } else if (status === 'ended') {
+      resetColors();
     }
+
+    remainingTopicsMinutes = getRemainingTopicsMinutes(topicIndex);
+
+    if (!remainingTopicMs) {
+      const remainingTopicsMs = minutesToMs(remainingTopicsMinutes);
+      remainingTopicMs = remainingMeetingMs - remainingTopicsMs;
+    }
+
+    remainingMeetingMs = remainingTopicMs + minutesToMs(remainingTopicsMinutes);
+
+    if (status === 'resumed') {
+      topicEndMs = Date.now() + remainingTopicMs;
+    }
+
+    buttonText =
+      topicIndex === -1
+        ? 'Start Meeting'
+        : status === 'paused'
+        ? 'Resume Meeting'
+        : 'Pause Meeting';
+
+    // For clients that did not start the meeting ...
+    if (isActive(meeting) && !intervalId) nextTopic(remainingTopicMs);
   }
 
-  function startOrPauseMeeting() {
-    if (meetingStarted) {
-      if (paused) {
-        // Prepare to resume.
-        endMsForTopic = Date.now() + remainingMsInTopic;
-      }
+  async function startMeeting() {
+    stopEditing();
+    status = 'started';
 
-      meetingStatus = paused ? 'resumed' : 'paused';
-
-      try {
-        updateMeeting({status: meetingStatus});
-      } catch (e) {
-        handleError(e);
-      }
-    } else {
-      startMeeting();
+    try {
+      topicIndex = 0;
+      await updateMeeting({startMs: Date.now(), status});
+    } catch (e) {
+      handleError(e);
     }
   }
 
@@ -176,6 +236,35 @@
     }
   }
 
+  function toggleMeeting() {
+    if (meetingStarted) {
+      // Determine if the meeting is currently paused.
+      const paused = status === 'paused';
+
+      // Determine the next status after toggling.
+      status = paused ? 'resumed' : 'paused';
+
+      let updates;
+
+      if (paused) {
+        // Prepare to resume.
+        topicEndMs = Date.now() + remainingTopicMs;
+        updates = {startMs: Date.now(), status};
+      } else {
+        // Prepare to pause.
+        updates = {remainingMeetingMs, remainingTopicMs, status};
+      }
+
+      try {
+        updateMeeting(updates);
+      } catch (e) {
+        handleError(e);
+      }
+    } else {
+      startMeeting();
+    }
+  }
+
   const updateMeeting = updates => call('updateMeeting', meeting._id, updates);
 
   function updateTopic(event, index, property, isNumber) {
@@ -191,9 +280,9 @@
 
   function updateTopicColor() {
     const color =
-      remainingMsInTopic > 120000 // two minutes
+      remainingTopicMs > 120000 // two minutes
         ? 'lightgreen'
-        : remainingMsInTopic > 60000 // one minute
+        : remainingTopicMs > SECONDS_PER_MINUTE * MS_PER_SECOND // one minute
         ? 'yellow'
         : 'pink';
     setTopicColor(topicIndex, color);
@@ -201,8 +290,9 @@
 </script>
 
 {#if haveTopics}
+  <div>topicIndex = {topicIndex}</div>
   <table>
-    <caption>The meeting has {meetingStatus}.</caption>
+    <caption>The meeting has {status}.</caption>
     <thead>
       <tr>
         <th>Topic</th>
@@ -259,7 +349,7 @@
             </td>
           {/if}
           {#if topicIndex === index}
-            <td class="time-remaining">{formatTime(remainingMsInTopic)}</td>
+            <td class="time-remaining">{formatTime(remainingTopicMs)}</td>
           {:else if meetingStarted}
             <td />
           {/if}
@@ -273,9 +363,11 @@
 
 <div class="buttons">
   {#if haveTopics}
-    <button type="button" on:click={startOrPauseMeeting}>{buttonText}</button>
+    <button type="button" on:click={toggleMeeting}>{buttonText}</button>
   {/if}
-  {#if !meetingStarted}
+  {#if meetingStarted}
+    <button type="button" on:click={endMeeting}>End Meeting</button>
+  {:else}
     <button on:click={addTopic}>Add Topic</button>
   {/if}
   <!-- <button on:click={close}>Close</button> -->
@@ -283,7 +375,7 @@
 
 {#if meetingStarted}
   <div class="remaining">
-    Time remaining in meeting - {formatTime(remainingMsInMeeting)}
+    Time remaining in meeting - {formatTime(remainingMeetingMs)}
   </div>
 {/if}
 

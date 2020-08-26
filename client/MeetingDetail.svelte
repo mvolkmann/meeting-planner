@@ -7,8 +7,6 @@
 
   const dispatch = createEventDispatcher();
 
-  let topicIndex = -1;
-
   const close = () => dispatch('close');
 
   function handleSubmit() {
@@ -18,10 +16,10 @@
 
 <form on:submit|preventDefault={handleSubmit}>
   <div class="left-side">
-    <MeetingEditor {meeting} bind:topicIndex />
+    <MeetingEditor {meeting} />
   </div>
   <div class="right-side">
-    <TopicEditor {meeting} bind:topicIndex />
+    <TopicEditor {meeting} />
   </div>
   <button class="close" on:click={close}>&#x2716;</button>
 </form>

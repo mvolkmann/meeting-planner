@@ -22,6 +22,7 @@
   },
   "plugins": ["import", "meteor", "svelte3"],
   "rules": {
-    "import/no-unresolved": ["error", {"ignore": ["^meteor/"]}]
+    "import/no-unresolved": ["error", {"ignore": ["^meteor/"]}],
+    "no-constant-condition": "off"
   }
 }

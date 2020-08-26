@@ -1,15 +1,10 @@
 <script>
-  import {call, handleError} from './util.js';
+  import {call, handleError, isActive} from './util.js';
 
   export let meeting;
-  export let topicIndex;
 
   $: ({status: meetingStatus} = meeting);
-
-  $: ({topics} = meeting);
-
-  $: meetingStarted = topicIndex > -1;
-  $: console.log('MeetingEditor.svelte x: meetingStarted =', meetingStarted);
+  $: meetingStarted = isActive(meeting);
 
   const updateMeeting = updates => call('updateMeeting', meeting._id, updates);
 
@@ -17,7 +12,7 @@
     const {value} = event.target;
 
     try {
-      await updateMeeting({[property]: value});
+      if (value) await updateMeeting({[property]: value});
       meeting[property] = value;
     } catch (e) {
       handleError(e);

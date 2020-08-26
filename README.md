@@ -7,5 +7,12 @@ The UI is built with Svelte.
 
 To run the app:
 
-- npm install
-- npm start
+- `npm install`
+- `npm start`
+
+To deploy the app to a DigitalOcean server
+that uses MongoDB Atlas for the database:
+
+- `cd .deploy`
+- `mup setup`
+- `mup deploy`
