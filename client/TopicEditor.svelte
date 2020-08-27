@@ -185,17 +185,11 @@
     }
 
     remainingTopicsMinutes = getRemainingTopicsMinutes(topicIndex);
-
-    if (!remainingTopicMs) {
-      const remainingTopicsMs = minutesToMs(remainingTopicsMinutes);
-      remainingTopicMs = remainingMeetingMs - remainingTopicsMs;
-    }
-
+    const remainingTopicsMs = minutesToMs(remainingTopicsMinutes);
+    remainingTopicMs = remainingMeetingMs - remainingTopicsMs;
     remainingMeetingMs = remainingTopicMs + minutesToMs(remainingTopicsMinutes);
 
-    if (status === 'resumed') {
-      topicEndMs = Date.now() + remainingTopicMs;
-    }
+    if (status === 'resumed') topicEndMs = Date.now() + remainingTopicMs;
 
     buttonText =
       topicIndex === -1
