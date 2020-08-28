@@ -46,11 +46,13 @@
     }
   }
 
-  function editTopic(index) {
+  function editTopic(index, event) {
     if (index === editTopicIndex) {
       stopEditing();
     } else {
       editTopicIndex = index;
+      const id = event ? event.target.id : 'description' + index;
+      setTimeout(() => document.getElementById(id).focus());
     }
   }
 
@@ -80,6 +82,10 @@
 
   const getRemainingTopicsMinutes = topicIndex =>
     topics.slice(topicIndex + 1).reduce((acc, topic) => acc + topic.minutes, 0);
+
+  function handleKeypress(event) {
+    if (event.key === 'Enter') addTopic();
+  }
 
   const minutesToMs = minutes => minutes * SECONDS_PER_MINUTE * MS_PER_SECOND;
 
@@ -175,6 +181,7 @@
       topicIndex = 0;
       while (true) {
         const topic = topics[topicIndex];
+        if (!topic) break;
         const topicMs = minutesToMs(topic.minutes);
         if (topicMs > elapsedMs) break;
         elapsedMs -= topicMs;
@@ -305,25 +312,41 @@
           {#if index === editTopicIndex}
             <td>
               <input
-                autofocus
+                id="description{index}"
                 value={topic.description}
                 on:input={e => updateTopic(e, index, 'description')} />
             </td>
             <td>
               <input
+                id="presenter{index}"
                 value={topic.presenter}
                 on:input={e => updateTopic(e, index, 'presenter')} />
             </td>
             <td>
               <input
+                id="minutes{index}"
                 type="number"
                 value={topic.minutes}
-                on:input={e => updateTopic(e, index, 'minutes', true)} />
+                on:input={e => updateTopic(e, index, 'minutes', true)}
+                on:keypress={handleKeypress} />
             </td>
           {:else}
-            <td>{topic.description}</td>
-            <td>{topic.presenter}</td>
-            <td class="minutes">{topic.minutes}</td>
+            <td
+              id="description{index}"
+              on:click={event => editTopic(index, event)}>
+              {topic.description}
+            </td>
+            <td
+              id="presenter{index}"
+              on:click={event => editTopic(index, event)}>
+              {topic.presenter}
+            </td>
+            <td
+              id="minutes{index}"
+              on:click={event => editTopic(index, event)}
+              class="minutes">
+              {topic.minutes}
+            </td>
           {/if}
           {#if !meetingStarted}
             <td class="edit">
