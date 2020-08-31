@@ -3,6 +3,12 @@
 
   export let meeting;
 
+  const NOT_STARTED_COLOR = 'white';
+  const STARTED_COLOR = 'lightgreen';
+  const WARNING_COLOR = 'yellow';
+  const DANGER_COLOR = 'pink';
+  const FINISHED_COLOR = 'lightgray';
+
   const MS_PER_SECOND = 1000;
   const SECONDS_PER_MINUTE = 60;
 
@@ -34,6 +40,15 @@
     } catch (e) {
       handleError(e);
     }
+  }
+
+  function advance() {
+    setTopicColor(topicIndex, FINISHED_COLOR);
+    clearInterval(intervalId);
+    intervalId = 0;
+    topicIndex++;
+    remainingTopicMs = 0; // need to calculate for next topic
+    nextTopic();
   }
 
   async function deleteTopic(topic) {
@@ -129,12 +144,7 @@
 
       const nowMs = Date.now();
       if (nowMs >= topicEndMs) {
-        setTopicColor(topicIndex, 'lightgray');
-        clearInterval(intervalId);
-        intervalId = 0;
-        topicIndex++;
-        remainingTopicMs = 0; // need to calculate for next topic
-        nextTopic();
+        advance();
       } else {
         setRemainingTopicMs(topicEndMs - nowMs);
         updateTopicColor(topicIndex);
@@ -143,7 +153,7 @@
   }
 
   function resetColors() {
-    topics.forEach((_, index) => setTopicColor(index, 'white'));
+    topics.forEach((_, index) => setTopicColor(index, NOT_STARTED_COLOR));
   }
 
   function setRemainingTopicMs(ms) {
@@ -282,10 +292,10 @@
   function updateTopicColor() {
     const color =
       remainingTopicMs > 120000 // two minutes
-        ? 'lightgreen'
+        ? STARTED_COLOR
         : remainingTopicMs > SECONDS_PER_MINUTE * MS_PER_SECOND // one minute
-        ? 'yellow'
-        : 'pink';
+        ? WARNING_COLOR
+        : DANGER_COLOR;
     setTopicColor(topicIndex, color);
   }
 </script>
@@ -382,6 +392,7 @@
     <button type="button" on:click={toggleMeeting}>{buttonText}</button>
   {/if}
   {#if meetingStarted}
+    <button type="button" on:click={advance}>Advance</button>
     <button type="button" on:click={endMeeting}>End Meeting</button>
   {:else}
     <button on:click={addTopic}>Add Topic</button>
