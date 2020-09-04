@@ -1,4 +1,5 @@
 <script>
+  import {time24to12} from 'meteor/mvolkmann:date-time-utils';
   import {createEventDispatcher} from 'svelte';
 
   export let meeting;
@@ -13,21 +14,11 @@
       dispatch('delete');
     }
   }
-
-  function formatTime() {
-    let [hours, minutes] = time.split(':');
-    hours = parseInt(hours);
-    const afterNoon = hours >= 12;
-    if (afterNoon && hours > 12) hours -= 12;
-    if (hours === 0) hours = 12; // midnight
-    const amPm = afterNoon ? 'PM' : 'AM';
-    return `${hours}:${minutes} ${amPm}`;
-  }
 </script>
 
 <li class:selected on:click>
   <span class="name">{name}</span>
-  {#if date}on {date} at {formatTime(time)}{/if}
+  {#if date}on {date} at {time24to12(time)}{/if}
   <button on:click|stopPropagation={deleteMeeting}>&#x1f5d1;</button>
 </li>
 

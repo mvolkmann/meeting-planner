@@ -4,6 +4,7 @@
   "scripts": {
     "format": "prettier --write '{client,imports,server}/**/*.{css,html,js,svelte}'",
     "lint": "eslint --fix --quiet '{client,imports,server}/**/*.{js,svelte}'",
+    "mup": "pushd .deploy && mup setup && mup deploy && popd",
     "start": "meteor run --exclude-archs 'web.browser.legacy, web.cordova'",
     "test": "meteor test --once --driver-package meteortesting:mocha",
     "test-app": "TEST_WATCH=1 meteor test --full-app --driver-package meteortesting:mocha",
@@ -11,15 +12,15 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.8.3",
-    "eslint": "^7.6.0",
+    "eslint": "^7.8.1",
     "eslint-plugin-import": "^2.22.0",
     "eslint-plugin-meteor": "^7.0.0",
     "eslint-plugin-svelte3": "^2.7.3",
     "jquery": "^3.4.1",
     "meteor-node-stubs": "^1.0.0",
-    "prettier": "^2.0.5",
-    "prettier-plugin-svelte": "^1.1.0",
-    "simpl-schema": "^1.9.0",
+    "prettier": "^2.1.1",
+    "prettier-plugin-svelte": "^1.2.0",
+    "simpl-schema": "^1.10.0",
     "svelte": "^3.24.1"
   },
   "meteor": {

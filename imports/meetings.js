@@ -1,6 +1,7 @@
 import {check, Match} from 'meteor/check';
 import {Meteor} from 'meteor/meteor';
 import {Mongo} from 'meteor/mongo';
+import {nextHourString, nowDateString} from 'meteor/mvolkmann:date-time-utils';
 import SimpleSchema from 'simpl-schema';
 
 export const Meetings = new Mongo.Collection('meetings');
@@ -36,13 +37,6 @@ if (Meteor.isServer) {
   });
 }
 
-export function getDefaultDate() {
-  const now = new Date();
-  const month = (now.getMonth() + 1).toString().padStart(2, '0');
-  const date = now.getDate().toString().padStart(2, '0');
-  return now.getFullYear() + '-' + month + '-' + date;
-}
-
 export function getDefaultTime() {
   const now = new Date();
   const hours = (now.getHours() + 1).toString().padStart(2, '0');
@@ -57,8 +51,8 @@ Meteor.methods({
     //const {username} = Meteor.users.findOne(this.userId);
     const meeting = {
       name: '',
-      date: getDefaultDate(),
-      time: getDefaultTime(),
+      date: nowDateString(),
+      time: nextHourString(),
       duration: 30,
       status: 'not started',
       topics: []

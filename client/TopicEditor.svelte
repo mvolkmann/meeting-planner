@@ -1,4 +1,10 @@
 <script>
+  import {
+    MS_PER_SECOND,
+    minutesToMs,
+    SECONDS_PER_MINUTE,
+    timeStringFromMs
+  } from 'meteor/mvolkmann:date-time-utils';
   import {call, handleError, isActive} from './util.js';
 
   export let meeting;
@@ -8,9 +14,6 @@
   const WARNING_COLOR = 'yellow';
   const DANGER_COLOR = 'pink';
   const FINISHED_COLOR = 'lightgray';
-
-  const MS_PER_SECOND = 1000;
-  const SECONDS_PER_MINUTE = 60;
 
   let buttonText = '';
   let editTopicIndex = -1;
@@ -87,22 +90,12 @@
     });
   }
 
-  function formatTime(ms) {
-    const seconds = Math.round(ms / MS_PER_SECOND);
-    const minutes = Math.floor(seconds / SECONDS_PER_MINUTE);
-    return (
-      minutes + ':' + (seconds % SECONDS_PER_MINUTE).toString().padStart(2, '0')
-    );
-  }
-
   const getRemainingTopicsMinutes = topicIndex =>
     topics.slice(topicIndex + 1).reduce((acc, topic) => acc + topic.minutes, 0);
 
   function handleKeypress(event) {
     if (event.key === 'Enter') addTopic();
   }
-
-  const minutesToMs = minutes => minutes * SECONDS_PER_MINUTE * MS_PER_SECOND;
 
   function moveTopicDown(topic) {
     const index = topics.findIndex(t => t === topic);
@@ -375,7 +368,7 @@
             </td>
           {/if}
           {#if topicIndex === index}
-            <td class="time-remaining">{formatTime(remainingTopicMs)}</td>
+            <td class="time-remaining">{timeStringFromMs(remainingTopicMs)}</td>
           {:else if meetingStarted}
             <td />
           {/if}
